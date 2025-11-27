@@ -20,17 +20,39 @@ public class RentalSystem {
         loadData();
     }
 
-    public void addVehicle(Vehicle vehicle) {
+    public boolean addVehicle(Vehicle vehicle) {
+        if (vehicle == null || vehicle.getLicensePlate() == null) {
+            System.out.println("Invalid vehicle.");
+            return false;
+        }
+        if (findVehicleByPlate(vehicle.getLicensePlate()) != null) {
+            System.out.println("Vehicle with this plate already exists.");
+            return false;
+        }
         vehicles.add(vehicle);
         saveVehicle(vehicle);
+        return true;
     }
 
-    public void addCustomer(Customer customer) {
+    public boolean addCustomer(Customer customer) {
+        if (customer == null) {
+            System.out.println("Invalid customer.");
+            return false;
+        }
+        if (findCustomerById(customer.getCustomerId()) != null) {
+            System.out.println("Customer with this ID already exists.");
+            return false;
+        }
         customers.add(customer);
         saveCustomer(customer);
+        return true;
     }
 
     public void rentVehicle(Vehicle vehicle, Customer customer, LocalDate date, double amount) {
+        if (vehicle == null || customer == null) {
+            System.out.println("Vehicle or customer is null.");
+            return;
+        }
         if (vehicle.getStatus() == Vehicle.VehicleStatus.Available) {
             vehicle.setStatus(Vehicle.VehicleStatus.Rented);
             RentalRecord r = new RentalRecord(vehicle, customer, date, amount, "RENT");
@@ -43,6 +65,10 @@ public class RentalSystem {
     }
 
     public void returnVehicle(Vehicle vehicle, Customer customer, LocalDate date, double extraFees) {
+        if (vehicle == null || customer == null) {
+            System.out.println("Vehicle or customer is null.");
+            return;
+        }
         if (vehicle.getStatus() == Vehicle.VehicleStatus.Rented) {
             vehicle.setStatus(Vehicle.VehicleStatus.Available);
             RentalRecord r = new RentalRecord(vehicle, customer, date, extraFees, "RETURN");
@@ -125,7 +151,9 @@ public class RentalSystem {
                 String[] p = line.split(",");
                 int id = Integer.parseInt(p[0]);
                 String name = p[1];
-                customers.add(new Customer(id, name));
+                if (findCustomerById(id) == null) {
+                    customers.add(new Customer(id, name));
+                }
             }
         } catch (FileNotFoundException e) {
         } catch (Exception e) {}
@@ -217,5 +245,6 @@ public class RentalSystem {
         }
     }
 }
+
 
 
