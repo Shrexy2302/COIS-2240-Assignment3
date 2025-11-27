@@ -3,9 +3,22 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class RentalSystem {
+
+    private static RentalSystem instance = null;
+
+    public static RentalSystem getInstance() {
+        if (instance == null) {
+            instance = new RentalSystem();
+        }
+        return instance;
+    }
+
     private List<Vehicle> vehicles = new ArrayList<>();
     private List<Customer> customers = new ArrayList<>();
     private RentalHistory rentalHistory = new RentalHistory();
+
+    private RentalSystem() {
+    }
 
     public void addVehicle(Vehicle vehicle) {
         vehicles.add(vehicle);
@@ -38,14 +51,12 @@ public class RentalSystem {
     }    
 
     public void displayVehicles(Vehicle.VehicleStatus status) {
-        // Display appropriate title based on status
         if (status == null) {
             System.out.println("\n=== All Vehicles ===");
         } else {
             System.out.println("\n=== " + status + " Vehicles ===");
         }
         
-        // Header with proper column widths
         System.out.printf("|%-16s | %-12s | %-12s | %-12s | %-6s | %-18s |%n", 
             " Type", "Plate", "Make", "Model", "Year", "Status");
         System.out.println("|--------------------------------------------------------------------------------------------|");
@@ -88,7 +99,6 @@ public class RentalSystem {
         if (rentalHistory.getRentalHistory().isEmpty()) {
             System.out.println("  No rental history found.");
         } else {
-            // Header with proper column widths
             System.out.printf("|%-10s | %-12s | %-20s | %-12s | %-12s |%n", 
                 " Type", "Plate", "Customer", "Date", "Amount");
             System.out.println("|-------------------------------------------------------------------------------|");
