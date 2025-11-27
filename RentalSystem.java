@@ -1,15 +1,14 @@
 import java.util.List;
-import java.time.LocalDate;
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.io.*;
 
 public class RentalSystem {
 
     private static RentalSystem instance = null;
 
     public static RentalSystem getInstance() {
-        if (instance == null) {
-            instance = new RentalSystem();
-        }
+        if (instance == null) instance = new RentalSystem();
         return instance;
     }
 
@@ -17,118 +16,79 @@ public class RentalSystem {
     private List<Customer> customers = new ArrayList<>();
     private RentalHistory rentalHistory = new RentalHistory();
 
-    private RentalSystem() {
-    }
+    private RentalSystem() {}
 
     public void addVehicle(Vehicle vehicle) {
         vehicles.add(vehicle);
+        saveVehicle(vehicle);
     }
 
     public void addCustomer(Customer customer) {
         customers.add(customer);
+        saveCustomer(customer);
     }
 
     public void rentVehicle(Vehicle vehicle, Customer customer, LocalDate date, double amount) {
         if (vehicle.getStatus() == Vehicle.VehicleStatus.Available) {
             vehicle.setStatus(Vehicle.VehicleStatus.Rented);
-            rentalHistory.addRecord(new RentalRecord(vehicle, customer, date, amount, "RENT"));
+            RentalRecord r = new RentalRecord(vehicle, customer, date, amount, "RENT");
+            rentalHistory.addRecord(r);
+            saveRecord(r);
             System.out.println("Vehicle rented to " + customer.getCustomerName());
-        }
-        else {
-            System.out.println("Vehicle is not available for renting.");
-        }
+        } else System.out.println("Vehicle is not available.");
     }
 
     public void returnVehicle(Vehicle vehicle, Customer customer, LocalDate date, double extraFees) {
         if (vehicle.getStatus() == Vehicle.VehicleStatus.Rented) {
             vehicle.setStatus(Vehicle.VehicleStatus.Available);
-            rentalHistory.addRecord(new RentalRecord(vehicle, customer, date, extraFees, "RETURN"));
+            RentalRecord r = new RentalRecord(vehicle, customer, date, extraFees, "RETURN");
+            rentalHistory.addRecord(r);
+            saveRecord(r);
             System.out.println("Vehicle returned by " + customer.getCustomerName());
-        }
-        else {
-            System.out.println("Vehicle is not rented.");
-        }
-    }    
-
-    public void displayVehicles(Vehicle.VehicleStatus status) {
-        if (status == null) {
-            System.out.println("\n=== All Vehicles ===");
-        } else {
-            System.out.println("\n=== " + status + " Vehicles ===");
-        }
-        
-        System.out.printf("|%-16s | %-12s | %-12s | %-12s | %-6s | %-18s |%n", 
-            " Type", "Plate", "Make", "Model", "Year", "Status");
-        System.out.println("|--------------------------------------------------------------------------------------------|");
-    	  
-        boolean found = false;
-        for (Vehicle vehicle : vehicles) {
-            if (status == null || vehicle.getStatus() == status) {
-                found = true;
-                String vehicleType;
-                if (vehicle instanceof Car) {
-                    vehicleType = "Car";
-                } else if (vehicle instanceof Minibus) {
-                    vehicleType = "Minibus";
-                } else if (vehicle instanceof PickupTruck) {
-                    vehicleType = "Pickup Truck";
-                } else {
-                    vehicleType = "Unknown";
-                }
-                System.out.printf("| %-15s | %-12s | %-12s | %-12s | %-6d | %-18s |%n", 
-                    vehicleType, vehicle.getLicensePlate(), vehicle.getMake(), vehicle.getModel(), vehicle.getYear(), vehicle.getStatus().toString());
-            }
-        }
-        if (!found) {
-            if (status == null) {
-                System.out.println("  No Vehicles found.");
-            } else {
-                System.out.println("  No vehicles with Status: " + status);
-            }
-        }
-        System.out.println();
+        } else System.out.println("Vehicle is not rented.");
     }
 
-    public void displayAllCustomers() {
-        for (Customer c : customers) {
-            System.out.println("  " + c.toString());
-        }
+    private void saveVehicle(Vehicle v) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("vehicles.txt", true))) {
+            String t = (v instanceof Car) ? "Car" :
+                       (v instanceof Minibus) ? "Minibus" :
+                       "PickupTruck";
+            String extra = "";
+            if (v instanceof Car) extra = "," + ((Car)v).getNumSeats();
+            if (v instanceof Minibus) extra = "," + ((Minibus)v).getInfo().contains("Yes");
+            if (v instanceof PickupTruck) extra = "," + ((PickupTruck)v).getCargoSize() + "," + ((PickupTruck)v).hasTrailer();
+
+            bw.write(t + "," + v.getLicensePlate() + "," + v.getMake() + "," + v.getModel() + "," + v.getYear() + extra);
+            bw.newLine();
+        } catch (Exception e) {}
     }
-    
-    public void displayRentalHistory() {
-        if (rentalHistory.getRentalHistory().isEmpty()) {
-            System.out.println("  No rental history found.");
-        } else {
-            System.out.printf("|%-10s | %-12s | %-20s | %-12s | %-12s |%n", 
-                " Type", "Plate", "Customer", "Date", "Amount");
-            System.out.println("|-------------------------------------------------------------------------------|");
-            
-            for (RentalRecord record : rentalHistory.getRentalHistory()) {                
-                System.out.printf("| %-9s | %-12s | %-20s | %-12s | $%-11.2f |%n", 
-                    record.getRecordType(), 
-                    record.getVehicle().getLicensePlate(),
-                    record.getCustomer().getCustomerName(),
-                    record.getRecordDate().toString(),
-                    record.getTotalAmount()
-                );
-            }
-            System.out.println();
-        }
+
+    private void saveCustomer(Customer c) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("customers.txt", true))) {
+            bw.write(c.getCustomerId() + "," + c.getCustomerName());
+            bw.newLine();
+        } catch (Exception e) {}
     }
-    
+
+    private void saveRecord(RentalRecord r) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("rental_records.txt", true))) {
+            bw.write(r.getRecordType() + "," + r.getVehicle().getLicensePlate() + "," +
+                     r.getCustomer().getCustomerName() + "," + r.getRecordDate() + "," +
+                     r.getTotalAmount());
+            bw.newLine();
+        } catch (Exception e) {}
+    }
+
     public Vehicle findVehicleByPlate(String plate) {
-        for (Vehicle v : vehicles) {
-            if (v.getLicensePlate().equalsIgnoreCase(plate)) {
-                return v;
-            }
-        }
+        for (Vehicle v : vehicles)
+            if (v.getLicensePlate().equalsIgnoreCase(plate)) return v;
         return null;
     }
-    
+
     public Customer findCustomerById(int id) {
         for (Customer c : customers)
-            if (c.getCustomerId() == id)
-                return c;
+            if (c.getCustomerId() == id) return c;
         return null;
     }
 }
+
