@@ -24,8 +24,18 @@ public abstract class Vehicle {
         return s.substring(0,1).toUpperCase() + s.substring(1).toLowerCase();
     }
 
+    private boolean isValidPlate(String plate) {
+        if (plate == null) return false;
+        String p = plate.trim();
+        if (p.isEmpty()) return false;
+        return p.matches("[A-Za-z]{3}\\d{3}");
+    }
+
     public void setLicensePlate(String plate) {
-        this.licensePlate = plate == null ? null : plate.toUpperCase();
+        if (!isValidPlate(plate)) {
+            throw new IllegalArgumentException("Invalid license plate");
+        }
+        this.licensePlate = plate.toUpperCase();
     }
 
     public void setStatus(VehicleStatus status) {
