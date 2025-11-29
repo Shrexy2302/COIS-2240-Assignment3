@@ -17,14 +17,34 @@ public class VehicleRentalTest {
         assertEquals("ABC567", v2.getLicensePlate());
         assertEquals("ZZZ999", v3.getLicensePlate());
 
-        assertFalse("AAA1000".matches("[A-Z]{3}\\d{3}"));
-        assertFalse("ZZZ99".matches("[A-Z]{3}\\d{3}"));
+        Vehicle invalid = new Car("Test", "Car", 2022, 4);
+        assertThrows(IllegalArgumentException.class, () -> invalid.setLicensePlate(""));
+        assertThrows(IllegalArgumentException.class, () -> invalid.setLicensePlate(null));
+        assertThrows(IllegalArgumentException.class, () -> invalid.setLicensePlate("AAA1000"));
+        assertThrows(IllegalArgumentException.class, () -> invalid.setLicensePlate("ZZZ99"));
+    }
 
-        Vehicle invalidVehicle = new Car("Test", "Car", 2022, 4);
+    @Test
+    public void testRentAndReturnVehicle() {
+        RentalSystem rs = RentalSystem.getInstance();
 
-        assertThrows(IllegalArgumentException.class, () -> invalidVehicle.setLicensePlate(""));
-        assertThrows(IllegalArgumentException.class, () -> invalidVehicle.setLicensePlate(null));
-        assertThrows(IllegalArgumentException.class, () -> invalidVehicle.setLicensePlate("AAA1000"));
-        assertThrows(IllegalArgumentException.class, () -> invalidVehicle.setLicensePlate("ZZZ99"));
+        Vehicle car = new Car("Toyota", "Corolla", 2019, 5);
+        car.setLicensePlate("AAA123");
+        Customer customer = new Customer(1, "George");
+
+        rs.addVehicle(car);
+        rs.addCustomer(customer);
+
+        assertEquals(Vehicle.VehicleStatus.Available, car.getStatus());
+
+        assertTrue(rs.rentVehicle(car, customer, java.time.LocalDate.now(), 100.0));
+        assertEquals(Vehicle.VehicleStatus.Rented, car.getStatus());
+
+        assertFalse(rs.rentVehicle(car, customer, java.time.LocalDate.now(), 100.0));
+
+        assertTrue(rs.returnVehicle(car, customer, java.time.LocalDate.now(), 0.0));
+        assertEquals(Vehicle.VehicleStatus.Available, car.getStatus());
+
+        assertFalse(rs.returnVehicle(car, customer, java.time.LocalDate.now(), 0.0));
     }
 }
